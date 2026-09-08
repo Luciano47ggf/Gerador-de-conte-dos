@@ -62,6 +62,7 @@ export function GeneratorView() {
   const [campaignChannels, setCampaignChannels] = useState<CampaignChannelId[]>(
     CAMPAIGN_CHANNELS.map((c) => c.id)
   );
+  const [isGenerating, setIsGenerating] = useState(false);
   const isCampaignMode = contentType === "campanha";
 
   // Pré-preenche o formulário quando chega do Histórico/Favoritos
@@ -88,49 +89,86 @@ export function GeneratorView() {
     return [...slots, ...Array(4 - slots.length).fill(null)].slice(0, 4);
   }, [generations, lastBatchIds]);
 
-  function handleGenerate() {
-    if (isCampaignMode) {
-      const campaignId = `campaign-${Date.now()}`;
-      const channels = CAMPAIGN_CHANNELS.filter((c) => campaignChannels.includes(c.id));
-      const filled: GenerationResult[] = channels.map((channel, i) => ({
-        id: `${Date.now()}-${i}`,
-        imageUrl: "",
-        request: {
-          brandId: brand.id,
-          prompt,
-          contentType,
-          format: channel.format,
-          referenceAssetIds: selectedIds,
-          advanced,
-          campaignId,
-          campaignChannel: channel.id,
-        },
-        createdAt: new Date().toISOString(),
-        isFavorite: false,
-      }));
+  async function fetchImageUrl(req: {
+    brandId: string;
+    prompt: string;
+    contentType: ContentType;
+    format: ImageFormat;
+    advanced: AdvancedSettings;
+  }): Promise<string> {
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req),
+      });
+      if (!res.ok) return "";
+      const data = await res.json();
+      return data.imageUrl ?? "";
+    } catch {
+      return "";
+    }
+  }
+
+  async function handleGenerate() {
+    setIsGenerating(true);
+    try {
+      if (isCampaignMode) {
+        const campaignId = `campaign-${Date.now()}`;
+        const channels = CAMPAIGN_CHANNELS.filter((c) => campaignChannels.includes(c.id));
+        const filled: GenerationResult[] = await Promise.all(
+          channels.map(async (channel, i) => {
+            const requestPayload = {
+              brandId: brand.id,
+              prompt,
+              contentType,
+              format: channel.format,
+              advanced,
+            };
+            const imageUrl = await fetchImageUrl(requestPayload);
+            return {
+              id: `${Date.now()}-${i}`,
+              imageUrl,
+              request: {
+                ...requestPayload,
+                referenceAssetIds: selectedIds,
+                campaignId,
+                campaignChannel: channel.id,
+              },
+              createdAt: new Date().toISOString(),
+              isFavorite: false,
+            };
+          })
+        );
+        addGenerations(filled);
+        setLastBatchIds(filled.map((r) => r.id));
+        return;
+      }
+
+      const requestPayload = {
+        brandId: brand.id,
+        prompt,
+        contentType,
+        format,
+        advanced,
+      };
+      const filled: GenerationResult[] = await Promise.all(
+        Array.from({ length: advanced.quantity }).map(async (_, i) => {
+          const imageUrl = await fetchImageUrl(requestPayload);
+          return {
+            id: `${Date.now()}-${i}`,
+            imageUrl,
+            request: { ...requestPayload, referenceAssetIds: selectedIds },
+            createdAt: new Date().toISOString(),
+            isFavorite: false,
+          };
+        })
+      );
       addGenerations(filled);
       setLastBatchIds(filled.map((r) => r.id));
-      return;
+    } finally {
+      setIsGenerating(false);
     }
-
-    const filled: GenerationResult[] = Array.from({ length: advanced.quantity }).map(
-      (_, i) => ({
-        id: `${Date.now()}-${i}`,
-        imageUrl: "",
-        request: {
-          brandId: brand.id,
-          prompt,
-          contentType,
-          format,
-          referenceAssetIds: selectedIds,
-          advanced,
-        },
-        createdAt: new Date().toISOString(),
-        isFavorite: false,
-      })
-    );
-    addGenerations(filled);
-    setLastBatchIds(filled.map((r) => r.id));
   }
 
   function toggleAsset(asset: BrandAsset) {
@@ -198,7 +236,8 @@ export function GeneratorView() {
           <GeneratorActions
             onOpenAdvanced={() => setAdvancedModalOpen(true)}
             onGenerate={handleGenerate}
-            disabled={isCampaignMode && campaignChannels.length === 0}
+            disabled={(isCampaignMode && campaignChannels.length === 0) || isGenerating}
+            isGenerating={isGenerating}
           />
         </div>
       </div>
@@ -210,8 +249,15 @@ export function GeneratorView() {
         onGenerateVariation={handleGenerate}
         onUseAsReference={() => {}}
         onDelete={removeGeneration}
-        onDownload={() => {}}
-        onDownloadAll={() => {}}
+        onDownload={(id) => {
+          const item = results.find((r) => r?.id === id);
+          if (item?.imageUrl) window.open(item.imageUrl, "_blank");
+        }}
+        onDownloadAll={() => {
+          results.forEach((r) => {
+            if (r?.imageUrl) window.open(r.imageUrl, "_blank");
+          });
+        }}
       />
 
       <BrandTemplatesSection />

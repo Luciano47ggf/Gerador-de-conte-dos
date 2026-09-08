@@ -43,7 +43,11 @@ export function FavoritosView() {
               generation={g}
               onToggleFavorite={() => toggleFavorite(g.id)}
               actions={[
-                { label: "Baixar", icon: Download, onClick: () => {} },
+                {
+                  label: "Baixar",
+                  icon: Download,
+                  onClick: () => g.imageUrl && window.open(g.imageUrl, "_blank"),
+                },
                 {
                   label: "Remover",
                   icon: Trash2,

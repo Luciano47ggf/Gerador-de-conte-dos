@@ -37,7 +37,11 @@ export function HistoricoView() {
               generation={g}
               onToggleFavorite={() => toggleFavorite(g.id)}
               actions={[
-                { label: "Baixar", icon: Download, onClick: () => {} },
+                {
+                  label: "Baixar",
+                  icon: Download,
+                  onClick: () => g.imageUrl && window.open(g.imageUrl, "_blank"),
+                },
                 {
                   label: "Favoritar",
                   icon: Star,

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Download, Star, Sparkles } from "lucide-react";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { useBrand } from "@/lib/brand-context";
@@ -62,11 +63,25 @@ export function ResultCard({
           "relative flex items-center justify-center overflow-hidden",
           ASPECT_RATIO[resultFormat]
         )}
-        style={{
-          background: `linear-gradient(150deg, ${brand.primaryColor}55 0%, ${brand.secondaryColor}55 55%, #0b0e14 100%)`,
-        }}
+        style={
+          result.imageUrl
+            ? undefined
+            : {
+                background: `linear-gradient(150deg, ${brand.primaryColor}55 0%, ${brand.secondaryColor}55 55%, #0b0e14 100%)`,
+              }
+        }
       >
-        <Sparkles size={22} style={{ color: brand.accentColor }} />
+        {result.imageUrl ? (
+          <Image
+            src={result.imageUrl}
+            alt={result.request.prompt || "Imagem gerada"}
+            fill
+            unoptimized
+            className="object-cover"
+          />
+        ) : (
+          <Sparkles size={22} style={{ color: brand.accentColor }} />
+        )}
         {channelLabel && (
           <span className="absolute left-2 top-2 rounded bg-black/40 px-1.5 py-0.5 text-[10px] text-white/80">
             {channelLabel}

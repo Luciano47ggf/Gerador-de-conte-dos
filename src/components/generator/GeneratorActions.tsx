@@ -1,16 +1,18 @@
 "use client";
 
-import { Settings2, Sparkles } from "lucide-react";
+import { Settings2, Sparkles, Loader2 } from "lucide-react";
 import { useBrand } from "@/lib/brand-context";
 
 export function GeneratorActions({
   onOpenAdvanced,
   onGenerate,
   disabled = false,
+  isGenerating = false,
 }: {
   onOpenAdvanced?: () => void;
   onGenerate?: () => void;
   disabled?: boolean;
+  isGenerating?: boolean;
 }) {
   const { brand } = useBrand();
 
@@ -31,8 +33,8 @@ export function GeneratorActions({
         className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         style={{ backgroundColor: brand.primaryColor, color: brand.onPrimaryColor }}
       >
-        <Sparkles size={15} />
-        Gerar imagem
+        {isGenerating ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+        {isGenerating ? "Gerando..." : "Gerar imagem"}
       </button>
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Sparkles, Star } from "lucide-react";
 import { getBrand } from "@/brands";
 import { cn } from "@/lib/utils";
@@ -36,11 +37,25 @@ export function GenerationCard({
     <div className="flex flex-col overflow-hidden rounded-xl border border-border-subtle bg-surface-card">
       <div
         className="relative flex aspect-square items-center justify-center overflow-hidden"
-        style={{
-          background: `linear-gradient(150deg, ${brand.primaryColor}55 0%, ${brand.secondaryColor}55 55%, #0b0e14 100%)`,
-        }}
+        style={
+          generation.imageUrl
+            ? undefined
+            : {
+                background: `linear-gradient(150deg, ${brand.primaryColor}55 0%, ${brand.secondaryColor}55 55%, #0b0e14 100%)`,
+              }
+        }
       >
-        <Sparkles size={20} style={{ color: brand.accentColor }} />
+        {generation.imageUrl ? (
+          <Image
+            src={generation.imageUrl}
+            alt={generation.request.prompt || "Imagem gerada"}
+            fill
+            unoptimized
+            className="object-cover"
+          />
+        ) : (
+          <Sparkles size={20} style={{ color: brand.accentColor }} />
+        )}
         {onToggleFavorite && (
           <button
             type="button"
