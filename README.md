@@ -19,18 +19,28 @@ mobile).
 A geração de imagem já está conectada e funciona sem nenhuma configuração,
 usando a [Pollinations.ai](https://pollinations.ai) (gratuita, sem chave).
 
-Pra uma qualidade bem melhor, recomendado, configure a **Cloudflare Workers
-AI** (também gratuita — até 10.000 "neurons"/dia, ~230 imagens/dia, sem
-cartão de crédito):
+Pra uma qualidade bem melhor — especialmente com **pessoas** nas cenas (mãos,
+rosto, anatomia) — configure a **Cloudflare Workers AI** (também gratuita,
+sem cartão de crédito):
 
 1. Copie `.env.local.example` para `.env.local`
 2. Siga as instruções dentro do arquivo pra pegar seu `CLOUDFLARE_ACCOUNT_ID`
    e `CLOUDFLARE_API_TOKEN`
 3. Preencha as duas variáveis e reinicie `npm run dev`
 
-Com as variáveis configuradas, o sistema passa a gerar as imagens com o
-modelo FLUX.1 [schnell] automaticamente — nenhuma outra mudança é
-necessária. Sem elas, continua funcionando normalmente com a Pollinations.
+Com as variáveis configuradas, a rota tenta automaticamente, nessa ordem, o
+melhor modelo que ainda tiver orçamento gratuito disponível no dia (o
+orçamento é de 10.000 "neurons"/dia, e cada modelo consome uma quantidade
+diferente — o sistema cuida disso sozinho, sem nenhuma configuração extra):
+
+| Modelo | Qualidade | Imagens grátis/dia (aprox.) |
+|---|---|---|
+| FLUX.2 [klein] 9B | Melhor (estado da arte, ótimo com pessoas) | ~7 |
+| FLUX.2 [klein] 4B | Muito boa | ~96 |
+| FLUX.1 [schnell] | Básica | ~170 |
+
+Se todos falharem (ex.: orçamento do dia esgotado ou credenciais ausentes),
+cai automaticamente para a Pollinations.
 
 ## Status — Fase 1 e Fase 2 (concluídas)
 

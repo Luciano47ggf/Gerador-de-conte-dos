@@ -26,22 +26,38 @@ function buildPollinationsUrl(prompt: string, format: ImageFormat): string {
 }
 
 /**
- * Provedor principal (Cloudflare Workers AI — FLUX.1 [schnell]).
- * Gratuito até 10.000 neurons/dia (~230 imagens/dia), sem cartão de
- * crédito. Requer conta grátis na Cloudflare + token de API.
- * Ver README para o passo a passo de configuração.
+ * Provedor principal (Cloudflare Workers AI — linha FLUX.2/FLUX.1).
+ * Gratuito (10.000 neurons/dia, sem cartão de crédito), mas cada modelo
+ * consome o orçamento diário de um jeito diferente. Tenta sempre o
+ * melhor modelo primeiro e cai pro próximo se o orçamento do dia
+ * já tiver acabado (ou se o modelo falhar por qualquer outro motivo):
  *
- * Docs: https://developers.cloudflare.com/workers-ai/models/flux-1-schnell/
+ *   1. FLUX.2 [klein] 9B  — melhor qualidade (pessoas/anatomia),
+ *                           ~7 imagens/dia dentro do free tier
+ *   2. FLUX.2 [klein] 4B  — ainda FLUX.2, ~96 imagens/dia
+ *   3. FLUX.1 [schnell]   — mais básico, ~170 imagens/dia (nunca falta)
+ *
+ * Docs: https://developers.cloudflare.com/workers-ai/platform/pricing/
  */
-async function generateWithCloudflare(
-  prompt: string
-): Promise<{ imageUrl: string } | null> {
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+const CLOUDFLARE_MODEL_CHAIN = [
+  "@cf/black-forest-labs/flux-2-klein-9b",
+  "@cf/black-forest-labs/flux-2-klein-4b",
+  "@cf/black-forest-labs/flux-1-schnell",
+] as const;
 
-  if (!accountId || !apiToken) return null;
-
-  const endpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/black-forest-labs/flux-1-schnell`;
+async function callCloudflareModel(
+  model: string,
+  prompt: string,
+  accountId: string,
+  apiToken: string
+): Promise<string | null> {
+  const endpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
+  // FLUX.1 [schnell] aceita/precisa de "steps"; os modelos FLUX.2 [klein]
+  // têm o número de passos fixo internamente e não usam esse campo.
+  const body =
+    model === "@cf/black-forest-labs/flux-1-schnell"
+      ? { prompt, steps: 4 }
+      : { prompt };
 
   try {
     const res = await fetch(endpoint, {
@@ -50,19 +66,29 @@ async function generateWithCloudflare(
         Authorization: `Bearer ${apiToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ prompt, steps: 4 }),
+      body: JSON.stringify(body),
     });
-
     if (!res.ok) return null;
-
     const data = await res.json();
     const base64Image: string | undefined = data?.result?.image;
-    if (!base64Image) return null;
-
-    return { imageUrl: `data:image/jpeg;base64,${base64Image}` };
+    return base64Image ? `data:image/jpeg;base64,${base64Image}` : null;
   } catch {
     return null;
   }
+}
+
+async function generateWithCloudflare(
+  prompt: string
+): Promise<{ imageUrl: string; model: string } | null> {
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+  if (!accountId || !apiToken) return null;
+
+  for (const model of CLOUDFLARE_MODEL_CHAIN) {
+    const imageUrl = await callCloudflareModel(model, prompt, accountId, apiToken);
+    if (imageUrl) return { imageUrl, model };
+  }
+  return null;
 }
 
 export async function POST(request: Request) {
@@ -97,6 +123,7 @@ export async function POST(request: Request) {
       imageUrl: cloudflareResult.imageUrl,
       promptUsed: finalPrompt,
       provider: "cloudflare",
+      model: cloudflareResult.model,
     });
   }
 
