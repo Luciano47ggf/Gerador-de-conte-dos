@@ -14,11 +14,25 @@ Abra [http://localhost:3000](http://localhost:3000). O layout foi desenhado
 para 1920×1080, mas é responsivo (sidebar recolhível em tablet, drawer em
 mobile).
 
-> Nota: se sua rede bloquear o Google Fonts, o Next.js usa uma fonte de
-> fallback automaticamente — isso não acontece em produção/ambientes com
-> acesso normal à internet.
+## Geração de imagem (gratuita)
 
-## Status — Fase 1 (concluída)
+A geração de imagem já está conectada e funciona sem nenhuma configuração,
+usando a [Pollinations.ai](https://pollinations.ai) (gratuita, sem chave).
+
+Pra uma qualidade bem melhor, recomendado, configure a **Cloudflare Workers
+AI** (também gratuita — até 10.000 "neurons"/dia, ~230 imagens/dia, sem
+cartão de crédito):
+
+1. Copie `.env.local.example` para `.env.local`
+2. Siga as instruções dentro do arquivo pra pegar seu `CLOUDFLARE_ACCOUNT_ID`
+   e `CLOUDFLARE_API_TOKEN`
+3. Preencha as duas variáveis e reinicie `npm run dev`
+
+Com as variáveis configuradas, o sistema passa a gerar as imagens com o
+modelo FLUX.1 [schnell] automaticamente — nenhuma outra mudança é
+necessária. Sem elas, continua funcionando normalmente com a Pollinations.
+
+## Status — Fase 1 e Fase 2 (concluídas)
 
 - [x] Estrutura do projeto (`src/app`, `src/components`, `src/brands`,
       `src/types`, `src/lib`)
@@ -31,21 +45,27 @@ mobile).
 - [x] Modal "Selecionar do acervo" (categorias + assets reais)
 - [x] Modal de Configurações avançadas (Estilo, Quantidade, Qualidade,
       Criatividade, Identidade visual)
-- [x] Seção Resultados (grid de 4, favoritar, menu de ações, "Baixar
-      todas") — atualmente com placeholders visuais, prontos para receber
-      URLs reais de imagem assim que a geração por IA for conectada
+- [x] Seção Resultados (grid de 4, favoritar, menu de ações, "Baixar todas")
 - [x] Seção Modelos da marca (troca automaticamente com a marca selecionada)
 - [x] Responsividade (desktop / tablet / mobile)
+- [x] Rotas reais: `/`, `/acervo`, `/historico`, `/favoritos`
+- [x] Persistência via `localStorage` (histórico e favoritos)
+- [x] Modo Campanha (Feed Instagram, Story, WhatsApp, Banner — mesma
+      direção criativa, formatos diferentes)
+- [x] Geração de imagem conectada (Cloudflare Workers AI, com fallback
+      automático para Pollinations.ai)
 
-## Próximos passos — Fase 2
+## Próximos passos possíveis
 
-- `/acervo` — biblioteca DAM completa com busca e filtros
-- `/historico` — histórico de gerações (localStorage)
-- `/favoritos` — conteúdos favoritados
-- Modo Campanha (Feed, Story, WhatsApp, Banner na mesma direção criativa)
-- Conectar a geração de imagem por IA de fato (hoje os resultados são
-  placeholders visuais com a identidade da marca, sem nenhuma imagem
-  inventada de produto/embalagem)
+- Fidelidade de embalagem: hoje a IA gera a cena inteira a partir do texto,
+  então o rótulo da embalagem não sai idêntico ao arquivo real. Para
+  fidelidade 100%, o próximo passo é compor a embalagem real por cima da
+  cena gerada (Canvas/Sharp no backend) em vez de pedir pra IA desenhá-la.
+- Trocar de provedor de imagem por um pago (OpenAI, Gemini) quando a
+  qualidade da Cloudflare/Pollinations não for mais suficiente — só é
+  necessário editar `generateWithCloudflare` em
+  `src/app/api/generate/route.ts`.
+- Expandir o Acervo com mais produtos (Filé 400g, 5kg, produtos Vinuta).
 
 ## Estrutura de assets
 
