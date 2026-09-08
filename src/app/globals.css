@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  /* Base — preto azulado / carvão muito escuro, conforme briefing */
+  --bg-base: #0b0e14;
+  --bg-elevated: #10141c;
+  --surface-card: #151a24;
+  --surface-card-hover: #1a2029;
+  --border-subtle: #232a37;
+  --border-strong: #2e3646;
+
+  --text-primary: #f4f5f7;
+  --text-secondary: #9aa3b2;
+  --text-tertiary: #656e7d;
+
+  /* Identidade da marca ativa — atualizadas em runtime por BrandProvider */
+  --brand-primary: #960636;
+  --brand-secondary: #7b0003;
+  --brand-accent: #fac7ab;
+  --brand-on-primary: #ffffff;
+}
+
+@theme inline {
+  --color-bg-base: var(--bg-base);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-surface-card: var(--surface-card);
+  --color-surface-card-hover: var(--surface-card-hover);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-on-primary: var(--brand-on-primary);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono",
+    Consolas, monospace;
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+/* Transição suave ao trocar de marca (cor de elementos ativos) */
+* {
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
