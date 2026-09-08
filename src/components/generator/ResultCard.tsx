@@ -4,7 +4,7 @@ import { Download, Star, Sparkles } from "lucide-react";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { useBrand } from "@/lib/brand-context";
 import { cn } from "@/lib/utils";
-import type { GenerationResult, ImageFormat } from "@/types/generator";
+import { CAMPAIGN_CHANNELS, type GenerationResult, type ImageFormat } from "@/types/generator";
 
 const ASPECT_RATIO: Record<ImageFormat, string> = {
   "1:1": "aspect-square",
@@ -48,18 +48,30 @@ export function ResultCard({
     );
   }
 
+  // No Modo Campanha, cada resultado tem seu próprio formato de canal —
+  // o card sempre reflete o formato real do resultado, não o formato global.
+  const resultFormat = result.request.format;
+  const channelLabel = result.request.campaignChannel
+    ? CAMPAIGN_CHANNELS.find((c) => c.id === result.request.campaignChannel)?.label
+    : null;
+
   return (
     <div className="flex flex-col overflow-hidden rounded-xl border border-border-subtle bg-surface-card">
       <div
         className={cn(
           "relative flex items-center justify-center overflow-hidden",
-          ASPECT_RATIO[format]
+          ASPECT_RATIO[resultFormat]
         )}
         style={{
           background: `linear-gradient(150deg, ${brand.primaryColor}55 0%, ${brand.secondaryColor}55 55%, #0b0e14 100%)`,
         }}
       >
         <Sparkles size={22} style={{ color: brand.accentColor }} />
+        {channelLabel && (
+          <span className="absolute left-2 top-2 rounded bg-black/40 px-1.5 py-0.5 text-[10px] text-white/80">
+            {channelLabel}
+          </span>
+        )}
         <span className="absolute bottom-2 left-2 right-2 truncate rounded bg-black/40 px-2 py-1 text-[10px] text-white/80">
           {result.request.prompt || "Sem descrição"}
         </span>

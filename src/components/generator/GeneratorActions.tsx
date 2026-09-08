@@ -6,9 +6,11 @@ import { useBrand } from "@/lib/brand-context";
 export function GeneratorActions({
   onOpenAdvanced,
   onGenerate,
+  disabled = false,
 }: {
   onOpenAdvanced?: () => void;
   onGenerate?: () => void;
+  disabled?: boolean;
 }) {
   const { brand } = useBrand();
 
@@ -25,7 +27,8 @@ export function GeneratorActions({
       <button
         type="button"
         onClick={onGenerate}
-        className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-opacity hover:opacity-90"
+        disabled={disabled}
+        className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         style={{ backgroundColor: brand.primaryColor, color: brand.onPrimaryColor }}
       >
         <Sparkles size={15} />
