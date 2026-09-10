@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vinuta · Painel de Avaliações</title>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="firebase-config.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400&family=Cinzel:wght@500;600&family=EB+Garamond:ital@0;1&display=swap');
+
+  :root{
+    --wine-900:#3a0d17;
+    --wine-800:#4c1220;
+    --gold:#b8935a;
+    --gold-light:#d4b483;
+    --cream:#f4ede2;
+    --ink:#2b1912;
+    --ink-soft:#6b5c50;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:radial-gradient(120% 100% at 50% 0%, #efe6d8 0%, #e2d6c3 55%, #d8c9b2 100%);
+    font-family:'EB Garamond', serif;
+    color:var(--ink);
+    min-height:100vh;
+    padding:28px 16px 60px;
+  }
+
+  .wrap{ max-width:760px; margin:0 auto; }
+
+  /* ---------- LOGIN ---------- */
+  #loginScreen{
+    max-width:380px;
+    margin:60px auto;
+    background:var(--cream);
+    border-radius:14px;
+    padding:36px 30px;
+    box-shadow:0 30px 60px -20px rgba(58,13,23,0.35), 0 0 0 1px rgba(184,147,90,0.25);
+    text-align:center;
+  }
+  #loginScreen h1{
+    font-family:'Cormorant Garamond', serif;
+    font-size:24px;
+    color:var(--wine-900);
+    margin:0 0 4px;
+  }
+  #loginScreen p{
+    font-size:13px;
+    color:var(--ink-soft);
+    font-style:italic;
+    margin:0 0 24px;
+  }
+  #loginScreen input{
+    width:100%;
+    background:#fbf8f1;
+    border:1px solid #e2d3ba;
+    border-radius:4px;
+    padding:13px 14px;
+    font-family:'EB Garamond', serif;
+    font-size:14px;
+    margin-bottom:12px;
+    outline:none;
+  }
+  #loginScreen input:focus{ border-color:var(--gold); }
+  #loginScreen button{
+    width:100%;
+    background:linear-gradient(180deg, #4c1220 0%, #380c15 100%);
+    color:var(--cream);
+    border:1px solid rgba(212,180,131,0.4);
+    border-radius:4px;
+    padding:13px;
+    font-family:'Cinzel',serif;
+    font-size:11.5px;
+    letter-spacing:2.5px;
+    font-weight:600;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  #loginError{
+    color:#a33b3b;
+    font-size:12px;
+    margin-top:12px;
+    min-height:14px;
+    font-style:italic;
+  }
+
+  /* ---------- DASHBOARD ---------- */
+  #dashboard{ display:none; }
+
+  header.top{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:24px;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  header.top h1{
+    font-family:'Cinzel', serif;
+    font-size:18px;
+    letter-spacing:2px;
+    color:var(--wine-900);
+    margin:0;
+  }
+  header.top .sub{
+    font-size:11px;
+    letter-spacing:1px;
+    color:var(--ink-soft);
+  }
+  #logoutBtn{
+    background:none;
+    border:1px solid #c9b190;
+    color:var(--wine-900);
+    padding:8px 16px;
+    border-radius:4px;
+    font-family:'EB Garamond', serif;
+    font-size:12.5px;
+    cursor:pointer;
+  }
+  #logoutBtn:hover{ background:#fbf3e6; }
+
+  /* Access cards */
+  .access-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-bottom:26px;
+  }
+  @media (max-width:520px){ .access-grid{ grid-template-columns:1fr; } }
+  .access-card{
+    background:var(--cream);
+    border:1px solid #e8dcc4;
+    border-radius:10px;
+    padding:18px;
+    text-align:center;
+  }
+  .access-card h3{
+    font-family:'Cormorant Garamond', serif;
+    font-size:16px;
+    color:var(--wine-900);
+    margin:0 0 10px;
+  }
+  .access-card img{
+    width:130px; height:130px;
+    border-radius:6px;
+    border:1px solid #e8dcc4;
+    margin-bottom:10px;
+  }
+  .access-card .link{
+    display:block;
+    font-size:11px;
+    color:var(--ink-soft);
+    word-break:break-all;
+    margin-bottom:8px;
+  }
+  .access-card button{
+    background:none;
+    border:1px solid var(--gold);
+    color:var(--wine-900);
+    padding:6px 14px;
+    border-radius:4px;
+    font-size:11px;
+    letter-spacing:1px;
+    font-family:'Cinzel', serif;
+    cursor:pointer;
+  }
+  .access-card button:hover{ background:#fbf3e6; }
+
+  /* Stats */
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:14px;
+    margin-bottom:26px;
+  }
+  @media (max-width:520px){ .stats{ grid-template-columns:1fr; } }
+  .stat-card{
+    background:var(--cream);
+    border:1px solid #e8dcc4;
+    border-radius:10px;
+    padding:18px;
+    text-align:center;
+  }
+  .stat-card .num{
+    font-family:'Cormorant Garamond', serif;
+    font-size:32px;
+    color:var(--wine-900);
+    font-weight:600;
+  }
+  .stat-card .label{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    letter-spacing:.5px;
+    margin-top:2px;
+  }
+
+  /* NPS breakdown bar */
+  .nps-card{
+    background:var(--cream);
+    border:1px solid #e8dcc4;
+    border-radius:10px;
+    padding:18px 20px;
+    margin-bottom:26px;
+  }
+  .nps-card-top{
+    display:flex; justify-content:space-between; align-items:baseline;
+    margin-bottom:12px;
+  }
+  .nps-card-top h3{
+    font-family:'Cormorant Garamond', serif;
+    font-size:16px;
+    color:var(--wine-900);
+    margin:0;
+  }
+  .nps-legend{
+    display:flex; gap:14px;
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+  .nps-legend span{ display:flex; align-items:center; gap:5px; }
+  .nps-legend .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .nps-bar{
+    display:flex;
+    width:100%;
+    height:14px;
+    border-radius:7px;
+    overflow:hidden;
+    background:#eee2cc;
+  }
+  .nps-bar .seg{ height:100%; transition:width .5s ease; }
+  .seg-detrator{ background:#a8563d; }
+  .seg-passivo{ background:var(--gold); }
+  .seg-promotor{ background:var(--wine-900); }
+
+  /* Histogram */
+  .histogram-card{
+    background:var(--cream);
+    border:1px solid #e8dcc4;
+    border-radius:10px;
+    padding:18px 20px 14px;
+    margin-bottom:26px;
+  }
+  .histogram-card h3{
+    font-family:'Cormorant Garamond', serif;
+    font-size:16px;
+    color:var(--wine-900);
+    margin:0 0 2px;
+  }
+  .histogram-sub{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    font-style:italic;
+    margin:0 0 18px;
+  }
+  .histogram{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:6px;
+    height:110px;
+  }
+  .hist-col{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-end;
+    height:100%;
+  }
+  .hist-count{
+    font-size:10px;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+    min-height:12px;
+  }
+  .hist-bar{
+    width:100%;
+    max-width:22px;
+    border-radius:3px 3px 0 0;
+    transition:height .5s ease;
+  }
+  .hist-score{
+    font-size:10.5px;
+    color:var(--ink-soft);
+    margin-top:6px;
+    font-family:'Cormorant Garamond', serif;
+    font-weight:600;
+  }
+
+  /* Summary */
+  .summary-card{
+    background:linear-gradient(180deg, #fbf7ee 0%, #f4ecdc 100%);
+    border:1px solid #e8dcc4;
+    border-radius:10px;
+    padding:26px 24px;
+    margin-top:30px;
+  }
+  .summary-card h2{
+    font-family:'Cormorant Garamond', serif;
+    font-size:21px;
+    color:var(--wine-900);
+    margin:0 0 12px;
+    text-align:center;
+  }
+  .summary-text{
+    font-size:14px;
+    line-height:1.7;
+    color:var(--ink);
+    text-align:center;
+    max-width:480px;
+    margin:0 auto 22px;
+  }
+  .summary-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:12px;
+  }
+  @media (max-width:560px){ .summary-grid{ grid-template-columns:repeat(2, 1fr); } }
+  .summary-item{
+    text-align:center;
+    padding:14px 8px;
+    background:rgba(255,255,255,0.5);
+    border-radius:8px;
+    border:1px solid #e8dcc4;
+  }
+  .summary-item .num{
+    font-family:'Cormorant Garamond', serif;
+    font-size:22px;
+    font-weight:600;
+    color:var(--wine-900);
+  }
+  .summary-item .label{
+    font-size:10px;
+    letter-spacing:.4px;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    margin-top:2px;
+  }
+
+  /* List */
+  .list-title{
+    font-family:'Cormorant Garamond', serif;
+    font-size:19px;
+    color:var(--wine-900);
+    margin:0 0 14px;
+  }
+  .entry{
+    background:var(--cream);
+    border:1px solid #e8dcc4;
+    border-radius:10px;
+    padding:16px 18px;
+    margin-bottom:12px;
+  }
+  .entry-top{
+    display:flex; justify-content:space-between; align-items:center;
+    gap:10px;
+  }
+  .entry-date{
+    font-size:11px;
+    color:#a89a89;
+    white-space:nowrap;
+  }
+  .entry-glasses{ display:flex; align-items:center; gap:8px; }
+  .entry-score{
+    font-family:'Cormorant Garamond', serif;
+    font-size:20px;
+    font-weight:600;
+    color:var(--wine-900);
+  }
+  .entry-badge{
+    font-size:10px;
+    letter-spacing:.5px;
+    padding:3px 9px;
+    border-radius:20px;
+    color:#fff;
+    text-transform:uppercase;
+  }
+  .badge-detrator{ background:#a8563d; }
+  .badge-passivo{ background:var(--gold); }
+  .badge-promotor{ background:var(--wine-900); }
+  .entry-comment{
+    font-size:13.5px;
+    color:var(--ink);
+    font-style:italic;
+    line-height:1.5;
+    border-left:2px solid var(--gold-light);
+    padding-left:10px;
+    margin-top:10px;
+  }
+  .empty-state, .loading-state{
+    text-align:center;
+    color:var(--ink-soft);
+    font-style:italic;
+    padding:40px 0;
+  }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <h1>Painel Vinuta</h1>
+  <p>Acesso restrito às avaliações da experiência.</p>
+  <input type="email" id="loginEmail" placeholder="E-mail" autocomplete="username">
+  <input type="password" id="loginPass" placeholder="Senha" autocomplete="current-password">
+  <button id="loginBtn">ENTRAR</button>
+  <p id="loginError"></p>
+</div>
+
+<div id="dashboard" class="wrap">
+  <header class="top">
+    <div>
+      <h1>VINUTA</h1>
+      <div class="sub">Painel de Avaliações</div>
+    </div>
+    <button id="logoutBtn">Sair</button>
+  </header>
+
+  <div class="access-grid">
+    <div class="access-card">
+      <h3>Link para avaliar</h3>
+      <img id="qrGuest" src="" alt="QR code do formulário">
+      <span class="link" id="linkGuest"></span>
+      <button onclick="copyLink('linkGuest')">Copiar link</button>
+    </div>
+    <div class="access-card">
+      <h3>Link deste painel</h3>
+      <img id="qrAdmin" src="" alt="QR code do painel">
+      <span class="link" id="linkAdmin"></span>
+      <button onclick="copyLink('linkAdmin')">Copiar link</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="num" id="statTotal">0</div>
+      <div class="label">RESPOSTAS</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="statNps">0</div>
+      <div class="label">NPS</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="statToday">0</div>
+      <div class="label">HOJE</div>
+    </div>
+  </div>
+
+  <div class="nps-card">
+    <div class="nps-card-top">
+      <h3>Classificação NPS</h3>
+      <div class="nps-legend">
+        <span><i class="dot" style="background:#a8563d"></i>Detratores</span>
+        <span><i class="dot" style="background:var(--gold)"></i>Neutros</span>
+        <span><i class="dot" style="background:var(--wine-900)"></i>Promotores</span>
+      </div>
+    </div>
+    <div class="nps-bar">
+      <div class="seg seg-detrator" id="segDetrator" style="width:0%"></div>
+      <div class="seg seg-passivo" id="segPassivo" style="width:0%"></div>
+      <div class="seg seg-promotor" id="segPromotor" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="histogram-card">
+    <h3>Votos por nota</h3>
+    <p class="histogram-sub">Quantas pessoas deram cada nota de 0 a 10</p>
+    <div class="histogram" id="histogram"></div>
+  </div>
+
+  <h2 class="list-title">Últimas avaliações</h2>
+  <div id="list"><div class="loading-state">Carregando...</div></div>
+
+  <div class="summary-card" id="summaryCard">
+    <h2>Resumo do desempenho</h2>
+    <p class="summary-text" id="summaryText">Aguardando avaliações...</p>
+    <div class="summary-grid" id="summaryGrid"></div>
+  </div>
+</div>
+
+<script>
+  // ---------- Access cards: build links + QR codes from current URL ----------
+  const base = window.location.href.replace(/admin\.html.*$/, '');
+  const guestLink = base + 'index.html';
+  const adminLink = base + 'admin.html';
+  document.getElementById('linkGuest').textContent = guestLink;
+  document.getElementById('linkAdmin').textContent = adminLink;
+  document.getElementById('qrGuest').src = 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&color=58-13-23&data=' + encodeURIComponent(guestLink);
+  document.getElementById('qrAdmin').src = 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&color=58-13-23&data=' + encodeURIComponent(adminLink);
+
+  function copyLink(id){
+    const text = document.getElementById(id).textContent;
+    navigator.clipboard.writeText(text);
+  }
+
+  // ---------- Auth ----------
+  const loginScreen = document.getElementById('loginScreen');
+  const dashboard = document.getElementById('dashboard');
+  const loginBtn = document.getElementById('loginBtn');
+  const loginError = document.getElementById('loginError');
+
+  loginBtn.addEventListener('click', async () => {
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    loginError.textContent = '';
+    try {
+      await auth.signInWithEmailAndPassword(email, pass);
+    } catch (err) {
+      loginError.textContent = 'E-mail ou senha inválidos.';
+    }
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
+
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      loginScreen.style.display = 'none';
+      dashboard.style.display = 'block';
+      startListening();
+    } else {
+      loginScreen.style.display = 'block';
+      dashboard.style.display = 'none';
+    }
+  });
+
+  // ---------- Data ----------
+  function categoryOf(value){
+    if (value >= 9) return 'promotor';
+    if (value >= 7) return 'passivo';
+    return 'detrator';
+  }
+
+  const categoryLabel = { detrator:'Detrator', passivo:'Neutro', promotor:'Promotor' };
+
+  let started = false;
+  function startListening(){
+    if (started) return;
+    started = true;
+    db.collection('avaliacoes').orderBy('criadoEm', 'desc').onSnapshot(snapshot => {
+      const docs = snapshot.docs.map(d => d.data());
+      renderStats(docs);
+      renderList(docs);
+    }, err => {
+      document.getElementById('list').innerHTML = '<div class="empty-state">Não foi possível carregar as avaliações.</div>';
+      console.error(err);
+    });
+  }
+
+  function scoreColor(score){
+    if (score >= 9) return 'var(--wine-900)';
+    if (score >= 7) return 'var(--gold)';
+    return '#a8563d';
+  }
+
+  function renderStats(docs){
+    const total = docs.length;
+    const todayStr = new Date().toDateString();
+    const today = docs.filter(d => d.criadoEm && d.criadoEm.toDate().toDateString() === todayStr).length;
+
+    let detratores = 0, passivos = 0, promotores = 0, somaNotas = 0;
+    const counts = Array(11).fill(0);
+
+    docs.forEach(d => {
+      const nota = (typeof d.nota === 'number') ? d.nota : (typeof d.rating === 'number' ? d.rating : null);
+      const cat = d.categoria || categoryOf(nota || 0);
+      if (cat === 'detrator') detratores++;
+      else if (cat === 'passivo') passivos++;
+      else promotores++;
+
+      if (nota !== null && nota >= 0 && nota <= 10) {
+        counts[nota]++;
+        somaNotas += nota;
+      }
+    });
+
+    const nps = total ? Math.round(((promotores - detratores) / total) * 100) : 0;
+    const media = total ? (somaNotas / total) : 0;
+
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statNps').textContent = nps;
+    document.getElementById('statToday').textContent = today;
+
+    const pct = n => total ? (n/total*100) : 0;
+    document.getElementById('segDetrator').style.width = pct(detratores) + '%';
+    document.getElementById('segPassivo').style.width = pct(passivos) + '%';
+    document.getElementById('segPromotor').style.width = pct(promotores) + '%';
+
+    renderHistogram(counts);
+    renderSummary({ total, nps, media, detratores, passivos, promotores, counts });
+  }
+
+  function renderHistogram(counts){
+    const maxCount = Math.max(...counts, 1);
+    const el = document.getElementById('histogram');
+    el.innerHTML = counts.map((c, score) => {
+      const heightPct = c ? Math.max((c / maxCount) * 100, 6) : 2;
+      return `
+        <div class="hist-col">
+          <span class="hist-count">${c || ''}</span>
+          <div class="hist-bar" style="height:${heightPct}%; background:${scoreColor(score)}; opacity:${c ? 1 : 0.25}"></div>
+          <span class="hist-score">${score}</span>
+        </div>`;
+    }).join('');
+  }
+
+  function renderSummary({ total, nps, media, detratores, passivos, promotores, counts }){
+    const summaryText = document.getElementById('summaryText');
+    const summaryGrid = document.getElementById('summaryGrid');
+
+    if (!total){
+      summaryText.textContent = 'Assim que as primeiras avaliações chegarem, o resumo de desempenho aparece aqui.';
+      summaryGrid.innerHTML = '';
+      return;
+    }
+
+    const pct = n => Math.round((n/total)*100);
+    let notaMaisComum = 0;
+    counts.forEach((c, score) => { if (c > counts[notaMaisComum]) notaMaisComum = score; });
+
+    let nivel, comentario;
+    if (nps >= 75){
+      nivel = 'excelente';
+      comentario = 'a experiência está gerando forte recomendação espontânea entre os convidados.';
+    } else if (nps >= 50){
+      nivel = 'muito bom';
+      comentario = 'a maioria dos convidados recomendaria a Vinuta, com espaço para conquistar os neutros.';
+    } else if (nps >= 0){
+      nivel = 'razoável';
+      comentario = 'há uma base de promotores, mas ainda existe uma parcela relevante de detratores a entender melhor.';
+    } else {
+      nivel = 'de atenção';
+      comentario = 'o número de detratores supera o de promotores — vale investigar os pontos de insatisfação.';
+    }
+
+    summaryText.innerHTML = `Com base em <strong>${total}</strong> avaliação${total===1?'':'s'}, a Vinuta atingiu um NPS de <strong>${nps}</strong>, considerado <strong>${nivel}</strong>. A nota média foi <strong>${media.toFixed(1)}</strong> e a nota mais recorrente foi <strong>${notaMaisComum}</strong>. Em resumo, ${comentario}`;
+
+    summaryGrid.innerHTML = `
+      <div class="summary-item"><div class="num">${media.toFixed(1)}</div><div class="label">Nota média</div></div>
+      <div class="summary-item"><div class="num">${pct(promotores)}%</div><div class="label">Promotores</div></div>
+      <div class="summary-item"><div class="num">${pct(passivos)}%</div><div class="label">Neutros</div></div>
+      <div class="summary-item"><div class="num">${pct(detratores)}%</div><div class="label">Detratores</div></div>
+    `;
+  }
+
+  function renderList(docs){
+    const list = document.getElementById('list');
+    if (!docs.length){
+      list.innerHTML = '<div class="empty-state">Nenhuma avaliação recebida ainda.</div>';
+      return;
+    }
+    list.innerHTML = docs.map(d => {
+      const date = d.criadoEm ? d.criadoEm.toDate().toLocaleString('pt-BR') : '—';
+      const nota = (d.nota !== undefined) ? d.nota : (d.rating !== undefined ? d.rating : '—');
+      const cat = d.categoria || categoryOf(typeof nota === 'number' ? nota : 0);
+      return `
+        <div class="entry">
+          <div class="entry-top">
+            <div class="entry-glasses">
+              <span class="entry-score">${nota}/10</span>
+              <span class="entry-badge badge-${cat}">${categoryLabel[cat]}</span>
+            </div>
+            <span class="entry-date">${date}</span>
+          </div>
+          ${d.comentario ? `<div class="entry-comment">${escapeHtml(d.comentario)}</div>` : ''}
+        </div>`;
+    }).join('');
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+</script>
+
+</body>
+</html>
